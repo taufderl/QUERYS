@@ -78,7 +78,7 @@ Qas::Application.configure do
   # Use default logging formatter so that PID and timestamp are not suppressed.
   config.log_formatter = ::Logger::Formatter.new
   
-  QAS::Application.config.middleware.use ExceptionNotification::Rack,
+  Qas::Application.config.middleware.use ExceptionNotification::Rack,
     :email => {
       :email_prefix => "[QA-System] ",
       :sender_address => %{"notifier" <notifier@taufderl.de>},

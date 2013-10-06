@@ -41,6 +41,7 @@ GEM
       actionmailer (>= 3.0.4)
       activesupport (>= 3.0.4)
     execjs (2.0.2)
+    fcgi (0.9.2)
     figaro (0.7.0)
       bundler (~> 1.0)
       rails (>= 3, < 5)
@@ -133,6 +134,7 @@ PLATFORMS
 DEPENDENCIES
   coffee-rails (~> 4.0.0)
   exception_notification
+  fcgi
   figaro
   jbuilder (~> 1.2)
   jquery-rails
