@@ -54,3 +54,5 @@ gem 'figaro'
 
 #exception notifier
 gem 'exception_notification'
+
+gem 'fcgi'
