@@ -55,6 +55,16 @@
     </div>
 
     <div class="container-fluid">
+      
+      <% if current_page? controller: :welcome, action: :index  %>
+      	<div class="row-fluid">
+          <div class="offset2 span8 well">
+          	This Question Answering System processes questions given in natural langauge referring to the subject Countries. It uses the parser ??? to extract the essencial content of the question, maps it to the propritate DBpedia relations and retrieves the answer from DBpedia using SPARQL. 
+          	It has been designed by two students at the University of Groningen as final project of the course 'Semantic Web Technology' 
+          </div>
+        </div>
+      <% end %>
+      
       <div class="row-fluid">
         <div class="offset2 span8">
           <%= bootstrap_flash %>
@@ -64,7 +74,8 @@
         <div class="span12">
           <%= yield %>
         </div>
-      </div><!--/row-->
+      </div>
+      <!--/row-->
 
       
     </div> <!-- /container -->
