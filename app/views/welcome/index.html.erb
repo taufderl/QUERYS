@@ -1,2 +1,26 @@
-<h1>Welcome#index</h1>
-<p>Find me in app/views/welcome/index.html.erb</p>
+<div>
+    
+    <%= form_tag({action: 'index'},{class: 'form-search'}) do %>
+      <fieldset>
+        <legend>Please enter your question:</legend>
+		<div class="span8 input-append">
+          <%= text_field_tag :question, params[:question], class: 'span8 search-query' %>
+          <%= submit_tag 'Get an answer...', class: 'btn btn-primary' %>
+        </div>
+      </fieldset>
+    <% end %>
+    
+    <% if @answer %>
+      <div class="well">
+    	  <%= form_tag({action: 'index'},{class: 'form-search'}) do %>
+    	    <fieldset>
+    	      <legend><%= @answer %></legend>
+    	      <%= hidden_field_tag :judge_answer, @question.id %>
+              <%= submit_tag 'Correct', name:'correct', class: 'btn btn-success' %>
+              <%= submit_tag 'Not correct', name: 'incorrect', class: 'btn btn-danger' %>
+            </fieldset> 
+          <% end %>
+        
+      </div>
+    <% end %>
+</div>
