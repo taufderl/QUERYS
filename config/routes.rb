@@ -1,7 +1,10 @@
 Qas::Application.routes.draw do
   get "index" => 'welcome#index'
   post "index" => 'welcome#index'
-  resources :questions
+  
+#  resources :questions
+  get 'questions' => 'questions#index'
+  delete 'questions/:id' => 'questions#destroy'
 
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".

@@ -6,7 +6,7 @@ class WelcomeController < ApplicationController
       id = params[:judge_answer]
       question = Question.find(id)
       @answer = question.answer
-      params[:correct]? question.correct = true : question.correct = false 
+      question.correct = params[:correct]? true : false 
       question.save
       
       @question = question
