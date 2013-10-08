@@ -9,4 +9,4 @@
 
 # Make sure your secret_key_base is kept private
 # if you're sharing your code publicly.
-Qas::Application.config.secret_key_base = 'eebd99669a1ec029b7f3822d7fc421a1bb15926cfb9433adea11dc416cc65c96a55968867e42925787e441613eed19de43a399df8fa649db2fbcf703ba48ff6a'
+Qas::Application.config.secret_key_base = ENV['SECRET_TOKEN']
