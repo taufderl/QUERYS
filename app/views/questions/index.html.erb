@@ -17,9 +17,9 @@
         <td><%= question.question %></td>
         <td><%= question.answer %></td>
         <td>
-        	<% if question.correct %>
+        	<% if question.correct == true %>
         		<span class="label label-success">correct</span>
-        	<% else %>
+        	<% elsif question.correct == false %>
         	   <span class="label label-important">incorrect</span>
         	<% end %>
         </td>
