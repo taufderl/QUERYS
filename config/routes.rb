@@ -1,4 +1,6 @@
 Qas::Application.routes.draw do
+  resources :relations
+
   get "index" => 'welcome#index'
   post "index" => 'welcome#index'
   

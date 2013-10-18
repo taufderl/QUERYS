@@ -11,12 +11,27 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20131006190403) do
+ActiveRecord::Schema.define(version: 20131017170303) do
+
+  create_table "countries", force: true do |t|
+    t.string   "name"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "countries", ["name"], name: "index_countries_on_name", unique: true
 
   create_table "questions", force: true do |t|
     t.string   "question"
     t.string   "answer"
     t.boolean  "correct"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  create_table "relations", force: true do |t|
+    t.string   "key"
+    t.string   "relation"
     t.datetime "created_at"
     t.datetime "updated_at"
   end

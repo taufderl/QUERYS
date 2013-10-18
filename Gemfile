@@ -56,3 +56,12 @@ gem 'figaro'
 gem 'exception_notification'
 
 gem 'fcgi'
+
+# to read RDF files and use SPARQL
+gem 'rdf'
+gem 'sparql-client'
+            
+gem 'xml-simple'
+gem 'wordnet'
+gem 'wordnet-defaultdb'
+gem 'nokogiri'
