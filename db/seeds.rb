@@ -5,3 +5,12 @@
 #
 #   cities = City.create([{ name: 'Chicago' }, { name: 'Copenhagen' }])
 #   Mayor.create(name: 'Emanuel', city: cities.first)
+
+
+cfile = File.open('db/country_names').read
+
+cfile.gsub!(/\r\n?/, "\n")
+
+cfile.each_line do |country|
+  Country.create(name: country.strip)
+end

@@ -32,13 +32,17 @@ class WelcomeController < ApplicationController
     
       ##>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>SCRIPT BEGIN
 
+      # load script
       require_relative '../qas-core/QAScript.rb'
-      qas = QAScript.new
       
+      # and run
+      qas = QAScript.new
       result = qas.find_answer(@question)
       
+      # retrieve answer
       @answer = result[:answer]
       
+      # and debug information if asked for
       if @DEBUG_MODE
         flash.now[:notice] = result[:debug].join "<br />"
       end
@@ -53,35 +57,6 @@ class WelcomeController < ApplicationController
       render action: "index"
     end
     
-    
   end #def index
-
-
-private 
-
-
-def wordnet_hypernyms(word, part_of_speech)
-  
-  if WordNetMap.map.keys.include? word
-    return [word]
-  else
-    # look in wordnet
-    synsets = @wordnet.lookup_synsets(word, part_of_speech) 
-    
-    hypernyms = Set.new
-    
-    # get all hypernyms from wordnet
-    synsets.each  { |ss|
-      ss.hypernyms.each { |synset|
-        synset.words.each { |w|
-          hypernyms << w.lemma
-        }
-      }
-    }
-    
-    #check these with the mappings
-    return hypernyms.to_a & WordNetMap.map.keys.to_a
-  end
-end
 
 end

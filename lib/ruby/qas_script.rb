@@ -34,7 +34,7 @@ class QAS
     end
   end
   
-  ## TODO: STEP -2. read question
+  ## : STEP -2. read question
   @question = "What is the governmental form of the Netherlands?"
   
   ########## STEP -1. query nlp demo server <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -97,15 +97,15 @@ class QAS
   case locations.length
     when 0 # if did not find any country name
       puts 'no country found'
-      # TODO: find MISC in NERS and get wordnet pertaynim
+      # : find MISC in NERS and get wordnet pertaynim
       # if related to country -> that is the subject country
       # if two or more follwing proper nouns, join with _ and look up in countries
     when 1
-      #TODO: check if country, if not answer can't process
+      #: check if country, if not answer can't process
       @country = locations[0][0]
     when 2
       puts '2 locations found ---> ??'
-      #TODO: check both entries against an existing structure of
+      #: check both entries against an existing structure of
   end 
   
   ## @country is defined from here
@@ -122,16 +122,16 @@ class QAS
   @pos.each.with_index { |elem, i|
     if elem == 'NN' || elem == 'NNS'
       nouns << [@lemmas[i], i]
-      # TODO: get hypernyms, store all
+      # : get hypernyms, store all
       
       possible_relations += wordnet_hypernyms(@lemmas[i], WordNet::Noun)
       
     elsif (elem.include? 'JJ') && (@ners[i] != 'Misc')     ##check for capitalization
       adjectives << [@lemmas[i], i]
-      # TODO: 
+      # : 
     elsif elem.include? 'VB'
       verbs << [@lemmas[i], i]
-      # TODO: get hypernyms
+      # : get hypernyms
     end
   }
   
@@ -146,12 +146,12 @@ class QAS
   
   case possible_relations.length
     when 0
-      # TODO: find solution or say no relation found
+      # : find solution or say no relation found
       puts "no relation found"
     when 1
       @relation = WordNetMap.map[possible_relations[0]]
     when 2..10
-      # TODO: decide for certain relation or ??
+      # : decide for certain relation or ??
       
   end
   
@@ -159,7 +159,7 @@ class QAS
   
   ########## 4. Sparqle Query <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   
-  # TODO: integrate sparql query here
+  # : integrate sparql query here
   
   
   sparql = SPARQL::Client.new("http://dbpedia.org/sparql")
@@ -177,13 +177,13 @@ class QAS
       case result.length
         when 0
           puts "no results found"
-          #TODO: "do something"
+          # "do something"
         when 1
           result[0][:o].to_s =~ (/[.]*\/([A-Za-z]*)\z/)
           @answer =  $1
         when 2..10
           puts "too many results found"
-          # TODO: find right one
+          # : find right one
       end
       
     # when asked for country

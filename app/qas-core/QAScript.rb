@@ -8,7 +8,7 @@ class QAScript
       
   def find_answer(q)
  
-    @debug = []
+    @debug_log = []
     @question = q
     @wordnet = WordNet::Lexicon.new
     
@@ -51,10 +51,10 @@ class QAScript
     }
     
     # collect debugging information  
-    @debug << "words:      #{@words.join(', ')}"
-    @debug << "lemmas:    #{@lemmas.join(', ')}"
-    @debug << "pos-tags:  #{@pos.join(', ')}"
-    @debug << "ner-tags:  #{@ners.join(', ')}"
+    @debug_log << "words:      #{@words.join(', ')}"
+    @debug_log << "lemmas:    #{@lemmas.join(', ')}"
+    @debug_log << "pos-tags:  #{@pos.join(', ')}"
+    @debug_log << "ner-tags:  #{@ners.join(', ')}"
     
     ########## 1. FIND COUNTRY IN QUESTION <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     
@@ -63,27 +63,50 @@ class QAScript
     # find locations in question
     @ners.each.with_index { |elem, i|
       if elem == 'LOCATION'
-           locations << [@words[i], i]
+           locations << @words[i]
       end
     }
     
     # check how many possible locations were found
     case locations.length
       when 0 # if did not find any country name
-        @debug << "TODO: no country found"
+        @debug_log << "TODO: no country found"
         # TODO: find MISC in NERS and get wordnet pertaynim
         # if related to country -> that is the subject country
         # if two or more follwing proper nouns, join with _ and look up in countries
       when 1
-        #TODO: check if country, if not answer can't process
-        @country = locations[0][0]
-      when 2
-        @debug << "TODO: 2 locations found ---> ??"
-        #TODO: check both entries against an existing structure of
+        # check if location is country
+        if Country.find_by_name(locations[0])
+          @debug_log << "found country #{locations[0]}"
+          @country = locations[0]
+        else
+          @debug_log << "only location is no country"
+          #TODO: do the same like there was no country found   
+        end 
+      when 2..10
+        @debug_log << "more than one location found"
+        n = 0
+        indices = []
+        locations.each.with_index do |l, i|
+          if Country.find_by_name(l)
+            n+=1
+            indices << i
+          end
+        end
+        case n
+          when 0
+            @debug_log << "no country found"
+          when 1
+            @country = locations[indices[0]]
+            @debug_log << "one country found: #{@country}"
+          when 2..10
+            @debug_log << "more than one country found...abort"
+            return error_result "Didn't understand the question, because more than one country was mentioned"
+        end
     end 
     
     ## @country is defined from here
-    @debug << ">>>>>>>>>> country: #{@country}"
+    @debug_log << ">>>>>>>>>> country: #{@country}"
     
     ########## 2. FIND RELATION <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
      
@@ -94,39 +117,40 @@ class QAScript
     
     # search for word types
     @pos.each.with_index { |elem, i|
-      if elem == 'NN' || elem == 'NNS'
+      if (elem == 'NN' || elem == 'NNS')
         nouns << [@lemmas[i], i]
-        # TODO: get hypernyms, store all
-        
+        # get hypernyms
         possible_relations += wordnet_hypernyms(@lemmas[i], WordNet::Noun)
         
       elsif (elem.include? 'JJ') && (@ners[i] != 'Misc')     ##check for capitalization
         adjectives << [@lemmas[i], i]
-        # TODO: 
+        # TODO: handle adjectives
+        
       elsif elem.include? 'VB'
         verbs << [@lemmas[i], i]
-        # TODO: get hypernyms
+        # TODO: handle verbs
       end
     }
     
     # debug print findings
-    @debug << "nouns:      #{nouns}"
-    @debug << "adjectives: #{adjectives}"
-    @debug << "verbs:      #{verbs}"
-    @debug << "possible relations: #{possible_relations.join(', ')}"
+    @debug_log << "nouns:      #{nouns}"
+    @debug_log << "adjectives: #{adjectives}"
+    @debug_log << "verbs:      #{verbs}"
+    @debug_log << "possible relations: #{possible_relations.join(', ')}"
     
     ########## 3. decide relation <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     
     case possible_relations.length
       when 0
-        # TODO: find solution or say no relation found
+        @debug_log << "didn't find possible relation"
+        return error_result "Could not determine the aimed relation of the question"
       when 1
         @relation = WordNetMap.map[possible_relations[0]]
       when 2..10
         # TODO: decide for certain relation or ??
     end
     
-    @debug << ">>>>>>>>>> relation: #{@relation}"
+    @debug_log << ">>>>>>>>>> relation: #{@relation}"
     
     ########## 4. Sparqle Query <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     
@@ -138,30 +162,32 @@ class QAScript
     @answer = ''
     case
       # when asked for property
-      when @country.length > 0 && @relation.length > 0
+      when @country && @country.length > 0 && @relation && @relation.length > 0
         @query = Sparql.object_query(@country, @relation)
         
         result = sparql.query(@query)
         
         case result.length
           when 0
-            @debug << "TODO: no results found"
+            @debug_log << "TODO: no results found"
             #TODO: "do something"
           when 1
+            #TODO: extract answer if not a name
+            @answer = result[0][:o].to_s
             result[0][:o].to_s =~ (/[.]*\/([A-Za-z]*)\z/)
-            @answer =  $1
+            #@answer =  $1
           when 2..10
-            @debug << "TODO: too many results found"
+            @debug_log << "TODO: too many results found"
             # TODO: find right one
         end
         
       # when asked for country
-      when @object.length > 0 && @relation.length > 0
+      when @object && @object.length > 0 && @relation && @relation.length > 0
         @query = Sparql.subject_query(@relation, @object)
     end
     
-    # TODO: return hash with debug and solution info
-    return {:debug => @debug, :answer => @answer }
+    # return hash with debug and solution info
+    return {:debug => @debug_log, :answer => @answer }
   end # find_answer_method
   
   
@@ -188,5 +214,11 @@ class QAScript
       return hypernyms.to_a & WordNetMap.map.keys.to_a
     end
   end # end wordnet_hypernyms method
+  
+  private
+  
+  def error_result message
+    { :debug => @debug_log, :answer => message}
+  end
 
 end

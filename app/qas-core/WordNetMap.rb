@@ -21,11 +21,11 @@ class WordNetMap
     
     'density' => 'dbpedia-owl:populationDensity',
 
-    'people' => 'dbpprop:estimatePopulation',
-    'inhabitant' => 'dbpprop:estimatePopulation',
-    'citizen' => 'dbpprop:estimatePopulation',
+    'people' => 'dbpprop:populationEstimate',
+    'inhabitant' => 'dbpprop:populationEstimate',
+    'citizen' => 'dbpprop:populationEstimate',
     
-    'city' => 'dbpedia-owl:largestCity', # SuperlativeAdjective + City
+    'city' => 'dbpprop:largestCity', # SuperlativeAdjective + City
         
     'language' => 'dbpedia-owl:officialLanguage',
      
