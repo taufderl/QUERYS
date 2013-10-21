@@ -1,4 +1,4 @@
-class SparqlQAS
+class Sparql
   require 'rdf'
   require 'sparql/client'  
   
