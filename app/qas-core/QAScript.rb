@@ -16,12 +16,25 @@ class QAScript
     
     # prepare query string
     uri = URI("http://nlp.stanford.edu:8080/corenlp/process")
-    params = { 'outputFormat' => 'xml', 'input' => @question }
-    uri.query = URI.encode_www_form(params)
+    
+    #params = { 'outputFormat' => 'xml', 'input' => @question }
+    #uri.query = URI.encode_www_form(params)
     
     # do http query
-    result = Net::HTTP.get_response(uri)
+    #result = Net::HTTP.get_response(uri)
     
+    http = Net::HTTP.new(uri.host, uri.port)
+
+    http.read_timeout = 2
+    http.open_timeout = 2
+    begin
+      result = http.start() {|httpr|
+        httpr.get(uri.path)
+      }
+    rescue Net::OpenTimeout 
+      return error_result "The Stanford NLP core seems not to be reachable.\nCouldn't process your question."
+    end
+      
     # extract xml part from html answer
     x = result.body.gsub!("<br>", '')
     x = Nokogiri::HTML(x).text
@@ -174,8 +187,6 @@ class QAScript
           when 1
             #TODO: extract answer if not a name
             @answer = result[0][:o].to_s
-            result[0][:o].to_s =~ (/[.]*\/([A-Za-z]*)\z/)
-            #@answer =  $1
           when 2..10
             @debug_log << "TODO: too many results found"
             # TODO: find right one
@@ -185,6 +196,37 @@ class QAScript
       when @object && @object.length > 0 && @relation && @relation.length > 0
         @query = Sparql.subject_query(@relation, @object)
     end
+    
+    ########## format answer output dependent on incoming format
+    case @relation
+      when 'dbpedia-owl:anthem'
+        @answer =~ (/[.]*\/([A-Za-z]*)\z/)
+        @answer =  $1
+      when 'dbpedia-owl:capital'
+        @answer =~ (/[.]*\/([A-Za-z]*)\z/)
+        @answer =  $1
+      when 'dbpedia-owl:areaTotal'
+        @answer
+      when 'dbpedia-owl:currency'
+        @answer =~ (/[.]*\/([A-Za-z]*)\z/)
+        @answer =  $1
+      when 'dbpedia-owl:governmentType'
+        @answer
+      when 'dbpedia-owl:longName'
+        @answer
+      when 'dbpedia-owl:motto'
+        @answer
+      when 'dbpedia-owl:populationDensity'
+        @answer
+      when 'dbpprop:populationEstimate'
+        @answer
+      when 'dbpprop:largestCity'
+        @answer
+      when 'dbpedia-owl:language'
+        @answer =~ (/[.]*\/([A-Za-z]*)\z/)
+        @answer =  $1
+    end
+            
     
     # return hash with debug and solution info
     return {:debug => @debug_log, :answer => @answer }

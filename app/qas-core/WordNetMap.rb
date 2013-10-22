@@ -27,7 +27,7 @@ class WordNetMap
     
     'city' => 'dbpprop:largestCity', # SuperlativeAdjective + City
         
-    'language' => 'dbpedia-owl:officialLanguage',
+    'language' => 'dbpedia-owl:language',
      
     # consider that date sometimes not exists
     #['termination', 'ending', 'conclusion'] => 'dbpedia-owl:dissolutionDate',
