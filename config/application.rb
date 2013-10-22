@@ -20,6 +20,6 @@ module Qas
     # config.i18n.load_path += Dir[Rails.root.join('my', 'locales', '*.{rb,yml}').to_s]
     # config.i18n.default_locale = :de
     
-    config.pipeline = StanfordCoreNLP.load(:tokenize, :ssplit, :pos, :lemma, :ner)
+    #config.pipeline = StanfordCoreNLP.load(:tokenize, :ssplit, :pos, :lemma, :ner)
   end
 end
