@@ -1,4 +1,7 @@
 class WelcomeController < ApplicationController
+  
+  @@pipeline = StanfordCoreNLP.load(:tokenize, :ssplit, :pos, :lemma, :ner)
+  
   def index
 
     # set to debug mode
@@ -36,7 +39,7 @@ class WelcomeController < ApplicationController
 
       # and run
       qas = QAScript.new
-      result = qas.find_answer(@question)
+      result = qas.find_answer(@question, @@pipeline)
 
       # retrieve answer
       if result[:answer]

@@ -11,10 +11,8 @@ class QAScript
   require_relative 'WordNetMap'
   require_relative 'Sparql'
   
-  @@pipeline = StanfordCoreNLP.load(:tokenize, :ssplit, :pos, :lemma, :ner)
-  
   # The method find_answer runs the core algorithm that uses the stanford nlp 
-  def find_answer(q)
+  def find_answer(q, pipeline)
  
     @debug_log = []
     @question = q
@@ -75,7 +73,7 @@ class QAScript
     @ners = []
     
     annotated_question = StanfordCoreNLP::Annotation.new(@question)
-    @@pipeline.annotate(annotated_question)
+    pipeline.annotate(annotated_question)
       
     annotated_question.get(:tokens).to_a.each_with_index do |token, i|
       @words[i] = token.get(:text).to_s
