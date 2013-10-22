@@ -26,9 +26,9 @@ class QAScript
     
     ########## 0. Use Stanford NLP <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     
-    use_inherited_nlp
+    #use_inherited_nlp
     #use_tcp_nlp_server
-    #use_nlp_demo
+    use_nlp_demo
         
     # collect debugging information  
     @debug_log << "words:      #{@words.join(', ')}"

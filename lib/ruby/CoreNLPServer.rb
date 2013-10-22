@@ -47,3 +47,6 @@ class CoreNLPServer
     end
   end # def run
 end
+
+thread = Thread.new {CoreNLPServer.new.run}
+thread.join
