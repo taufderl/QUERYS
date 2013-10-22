@@ -28,6 +28,8 @@ GEM
     addressable (2.3.5)
     arel (4.0.0)
     atomic (1.1.14)
+    bind-it (0.2.7)
+      rjb (~> 1.4.3)
     builder (3.1.4)
     coffee-rails (4.0.0)
       coffee-script (>= 2.2.0)
@@ -97,6 +99,7 @@ GEM
     rdoc (3.12.2)
       json (~> 1.4)
     ref (1.0.5)
+    rjb (1.4.8)
     sass (3.2.12)
     sass-rails (4.0.0)
       railties (>= 4.0.0.beta, < 5.0)
@@ -120,6 +123,8 @@ GEM
       activesupport (>= 3.0)
       sprockets (~> 2.8)
     sqlite3 (1.3.8)
+    stanford-core-nlp (0.5.1)
+      bind-it (~> 0.2.5)
     therubyracer (0.12.0)
       libv8 (~> 3.16.14.0)
       ref
@@ -168,6 +173,7 @@ DEPENDENCIES
   sdoc
   sparql-client
   sqlite3
+  stanford-core-nlp
   therubyracer
   turbolinks
   twitter-bootstrap-rails (~> 2.2.8)
