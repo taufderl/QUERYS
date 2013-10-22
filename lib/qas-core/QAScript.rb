@@ -5,8 +5,13 @@ class QAScript
   require 'nokogiri'
   require 'xmlsimple'
   require 'net/http'
+  require 'stanford-core-nlp'
+  require 'socket'
+  require 'json'
   require_relative 'WordNetMap'
   require_relative 'Sparql'
+  
+  @@pipeline = StanfordCoreNLP.load(:tokenize, :ssplit, :pos, :lemma, :ner)
   
   # The method find_answer runs the core algorithm that uses the stanford nlp 
   def find_answer(q)
@@ -18,7 +23,7 @@ class QAScript
     ########## STEP -1. query nlp demo server <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     
     # prepare query string
-    uri = URI("http://nlp.stanford.edu:8080/corenlp/process")
+    #uri = URI("http://nlp.stanford.edu:8080/corenlp/process")
     
     #params = { 'outputFormat' => 'xml', 'input' => @question }
     #uri.query = URI.encode_www_form(params)
@@ -46,17 +51,38 @@ class QAScript
     #x = x[from, to-from]
     
     ## NEW VERSION with own server
-    cnlps = TCPSocket.new 'localhost', 52534
-    cnlps.puts @question
+    #begin
+    #  cnlps = TCPSocket.new 'localhost', 52534
+    #rescue Errno::ECONNREFUSED
+    #  return error_result "The core nlp is not running..."
+    #end
+    #cnlps.puts @question
 
-    while answer = cnlps.gets
-      result =  JSON.parse(answer)
-    end
+    #while answer = cnlps.gets
+    #  result =  JSON.parse(answer)
+    #end
     
-    @words = result['words']
-    @lemmas = result['lemmas']
-    @pos = result['pos']
-    @ners = result['ners']
+    #@words = result['words']
+    #@lemmas = result['lemmas']
+    #@pos = result['pos']
+    #@ners = result['ners']
+    
+    ## NEW NEW NEW Version direct inherited
+    
+    @words = []
+    @lemmas = []
+    @pos = []
+    @ners = []
+    
+    annotated_question = StanfordCoreNLP::Annotation.new(@question)
+    @@pipeline.annotate(annotated_question)
+      
+    annotated_question.get(:tokens).to_a.each_with_index do |token, i|
+      @words[i] = token.get(:text).to_s
+      @lemmas[i] = token.get(:lemma).to_s 
+      @pos[i] = token.get(:part_of_speech).to_s
+      @ners[i] = token.get(:named_entity_tag).to_s
+    end  
     
     
     ########## STEP 0. PARSE XML DATA <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
