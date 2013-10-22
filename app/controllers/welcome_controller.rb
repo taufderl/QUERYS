@@ -40,7 +40,11 @@ class WelcomeController < ApplicationController
       result = qas.find_answer(@question)
       
       # retrieve answer
-      @answer = result[:answer]
+      if result[:answer]
+        @answer = result[:answer]
+      elsif result[:error]
+        flash.now[:alert] = result[:error] 
+      end
       
       # and debug information if asked for
       if @DEBUG_MODE

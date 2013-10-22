@@ -197,7 +197,7 @@ class QAScript
         @query = Sparql.subject_query(@relation, @object)
     end
     
-    ########## format answer output dependent on incoming format
+    ########## 5. format answer output dependent on incoming format
     case @relation
       when 'dbpedia-owl:anthem'
         @answer =~ (/[.]*\/([A-Za-z]*)\z/)
@@ -260,7 +260,7 @@ class QAScript
   private
   
   def error_result message
-    { :debug => @debug_log, :answer => message}
+    { :debug => @debug_log, :error => message, :answer => false}
   end
 
 end
