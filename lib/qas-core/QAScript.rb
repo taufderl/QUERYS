@@ -46,7 +46,7 @@ class QAScript
     #x = x[from, to-from]
     
     ## NEW VERSION with own server
-    cnlps = TCPSocket.new 'localhost', 48534
+    cnlps = TCPSocket.new 'localhost', 52534
     cnlps.puts @question
 
     while answer = cnlps.gets

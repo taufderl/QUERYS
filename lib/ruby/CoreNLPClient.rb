@@ -2,9 +2,7 @@ require 'stanford-core-nlp'
 require 'socket'
 require 'json'
 
-text = 'What is the capital of the Netherlands?'
-
-server = TCPSocket.new 'localhost', 48534
+server = TCPSocket.new 'localhost', 52534
 
 server.puts "What is the capital of the Netherlands?"
 

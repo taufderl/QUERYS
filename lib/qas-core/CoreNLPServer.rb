@@ -17,7 +17,7 @@ class CoreNLPServer
     @pos = []
     @ners = []
     
-    server = TCPServer.new 48534
+    server = TCPServer.new 52534
     loop do
       client = server.accept
       
