@@ -10,101 +10,26 @@ class QAScript
   require 'json'
   require_relative 'WordNetMap'
   require_relative 'Sparql'
-  
+
+
   # The method find_answer runs the core algorithm that uses the stanford nlp 
-  def find_answer(q, pipeline)
+  def find_answer(q)
  
     @debug_log = []
     @question = q
-    @wordnet = WordNet::Lexicon.new
-    
-    ########## STEP -1. query nlp demo server <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    
-    # prepare query string
-    #uri = URI("http://nlp.stanford.edu:8080/corenlp/process")
-    
-    #params = { 'outputFormat' => 'xml', 'input' => @question }
-    #uri.query = URI.encode_www_form(params)
-    #
-    # do http query
-    #result = Net::HTTP.get_response(uri)
-    #
-    #http = Net::HTTP.new(uri.host, uri.port)
-    #
-    #http.read_timeout = 5
-    #http.open_timeout = 5
-    #begin
-    #  result = http.start() {|httpr|
-    #    httpr.get(uri.path)
-    #  }
-    #rescue Net::OpenTimeout 
-    #  return error_result "The Stanford NLP core seems not to be reachable.\nCouldn't process your question."
-    #end
-    #  
-    # extract xml part from html answer
-    #x = result.body.gsub!("<br>", '')
-    #x = Nokogiri::HTML(x).text
-    #from =  (x =~ /<\?xml /)
-    #to = (x =~ /<\/root>/) +7
-    #x = x[from, to-from]
-    
-    ## NEW VERSION with own server
-    #begin
-    #  cnlps = TCPSocket.new 'localhost', 52534
-    #rescue Errno::ECONNREFUSED
-    #  return error_result "The core nlp is not running..."
-    #end
-    #cnlps.puts @question
-
-    #while answer = cnlps.gets
-    #  result =  JSON.parse(answer)
-    #end
-    
-    #@words = result['words']
-    #@lemmas = result['lemmas']
-    #@pos = result['pos']
-    #@ners = result['ners']
-    
-    ## NEW NEW NEW Version direct inherited
+    @wordnet = WordNet::Lexicon.new    
     
     @words = []
     @lemmas = []
     @pos = []
     @ners = []
     
-    annotated_question = StanfordCoreNLP::Annotation.new(@question)
-    pipeline.annotate(annotated_question)
-      
-    annotated_question.get(:tokens).to_a.each_with_index do |token, i|
-      @words[i] = token.get(:text).to_s
-      @lemmas[i] = token.get(:lemma).to_s 
-      @pos[i] = token.get(:part_of_speech).to_s
-      @ners[i] = token.get(:named_entity_tag).to_s
-    end  
+    ########## 0. Use Stanford NLP <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     
-    
-    ########## STEP 0. PARSE XML DATA <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    
-    # read in xml string from nlp parser
-    #xml = XmlSimple.xml_in(x,  { 'KeyAttr' => 'name' })
-    #xml = xml['document'][0]['sentences'][0]['sentence'][0]['tokens'][0]['token']
-    
-    # define data arrays
-#    @words = []
-#    @lemmas = []
-#    @pos = []
-#    @ners = []
-    
-
-    
-    # extract data from xml document
-    #xml.each.with_index  { |element, i|
-#      @words[i] = element['word'][0]
-#      @lemmas[i] = element['lemma'][0]
-#      @pos[i] = element['POS'][0]
-#      @ners[i] = element['NER'][0]
-#    }
-    
+    use_inherited_nlp
+    #use_tcp_nlp_server
+    #use_nlp_demo
+        
     # collect debugging information  
     @debug_log << "words:      #{@words.join(', ')}"
     @debug_log << "lemmas:    #{@lemmas.join(', ')}"
@@ -303,6 +228,84 @@ class QAScript
   
   def error_result message
     { :debug => @debug_log, :error => message, :answer => false}
+  end
+  
+  ## Several methods follow to use the nlp parser
+  
+  def use_nlp_demo
+    uri = URI("http://nlp.stanford.edu:8080/corenlp/process")
+    
+    params = { 'outputFormat' => 'xml', 'input' => @question }
+    uri.query = URI.encode_www_form(params)
+    
+    # do http query
+    result = Net::HTTP.get_response(uri)
+    
+    #http = Net::HTTP.new(uri.host, uri.port)
+    
+    #http.read_timeout = 5
+    #http.open_timeout = 5
+    #begin
+    #  result = http.start() {|httpr|
+    #    httpr.post(uri.path, params)
+    #  }
+    #rescue Net::OpenTimeout 
+    #  return error_result "The Stanford NLP core seems not to be reachable.\nCouldn't process your question."
+    #end
+    
+    puts result.inspect
+    puts result.body
+      
+    # extract xml part from html answer
+    x = result.body.gsub!("<br>", '')
+    x = Nokogiri::HTML(x).text
+    from =  (x =~ /<\?xml /)
+    to = (x =~ /<\/root>/) +7
+    x = x[from, to-from]
+        
+    # read in xml string from nlp parser
+    xml = XmlSimple.xml_in(x,  { 'KeyAttr' => 'name' })
+    xml = xml['document'][0]['sentences'][0]['sentence'][0]['tokens'][0]['token']
+    
+    # extract data from xml document
+    xml.each.with_index  { |element, i|
+      @words[i] = element['word'][0]
+      @lemmas[i] = element['lemma'][0]
+      @pos[i] = element['POS'][0]
+      @ners[i] = element['NER'][0]
+    }    
+  end
+  
+  def use_tcp_nlp_server
+    begin
+      cnlps = TCPSocket.new 'localhost', 52534
+    rescue Errno::ECONNREFUSED
+      return error_result "The core nlp is not running..."
+    end
+    cnlps.puts @question
+
+    while answer = cnlps.gets
+      result =  JSON.parse(answer)
+    end
+    
+    @words = result['words']
+    @lemmas = result['lemmas']
+    @pos = result['pos']
+    @ners = result['ners']
+  end
+  
+  def use_inherited_nlp
+    #@@pipeline = StanfordCoreNLP.load(:tokenize, :ssplit, :pos, :lemma, :ner) ##TODO MOVE AWAY HERE
+    annotated_question = StanfordCoreNLP::Annotation.new(@question)
+    #@@pipeline.annotate(annotated_question)
+    Rails.application.config.pipeline.annotate(annotated_question)
+      
+    annotated_question.get(:tokens).to_a.each_with_index do |token, i|
+      @words[i] = token.get(:text).to_s
+      @lemmas[i] = token.get(:lemma).to_s 
+      @pos[i] = token.get(:part_of_speech).to_s
+      @ners[i] = token.get(:named_entity_tag).to_s
+    end
   end
 
 end

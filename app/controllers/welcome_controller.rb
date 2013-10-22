@@ -1,9 +1,8 @@
 class WelcomeController < ApplicationController
+  require_relative '../qas-core/QAScript.rb'
   
-  @@pipeline = StanfordCoreNLP.load(:tokenize, :ssplit, :pos, :lemma, :ner)
-  
+  # if index page
   def index
-
     # set to debug mode
     @DEBUG_MODE = true
 
@@ -34,12 +33,10 @@ class WelcomeController < ApplicationController
 
       ##>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>SCRIPT BEGIN
 
-      # load script
-      require_relative '../qas-core/QAScript.rb'
+      # run qascript
+      qascript = QAScript.new
+      result = qascript.find_answer(@question)
 
-      # and run
-      qas = QAScript.new
-      result = qas.find_answer(@question, @@pipeline)
 
       # retrieve answer
       if result[:answer]
