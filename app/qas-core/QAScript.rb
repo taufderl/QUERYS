@@ -25,8 +25,8 @@ class QAScript
     
     http = Net::HTTP.new(uri.host, uri.port)
 
-    http.read_timeout = 2
-    http.open_timeout = 2
+    http.read_timeout = 5
+    http.open_timeout = 5
     begin
       result = http.start() {|httpr|
         httpr.get(uri.path)
