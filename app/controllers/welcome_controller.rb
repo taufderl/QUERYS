@@ -32,7 +32,7 @@ class WelcomeController < ApplicationController
       ##>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>SCRIPT BEGIN
 
       # load script
-      require_relative '../../lib/qas-core/QAScript.rb'
+      require_relative '../qas-core/QAScript.rb'
 
       # and run
       qas = QAScript.new
