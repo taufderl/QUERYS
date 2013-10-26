@@ -7,6 +7,11 @@
           <%= text_field_tag :question, params[:question], class: 'span9 search-query' %>
           <%= submit_tag 'Get an answer...', class: 'btn btn-primary' %>
         </div>
+        <div class="span12 input-append">
+          <label class="checkbox inline">
+          <%= check_box_tag :remember_country, 1, params[:remember_country] %> Remember country
+		  </label>
+       	</div>
       </fieldset>
     <% end %>
     

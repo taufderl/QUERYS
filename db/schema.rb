@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20131017170303) do
+ActiveRecord::Schema.define(version: 20131026202819) do
 
   create_table "countries", force: true do |t|
     t.string   "name"
@@ -27,6 +27,8 @@ ActiveRecord::Schema.define(version: 20131017170303) do
     t.boolean  "correct"
     t.datetime "created_at"
     t.datetime "updated_at"
+    t.string   "country"
+    t.string   "relation"
   end
 
   create_table "relations", force: true do |t|

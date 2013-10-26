@@ -3,6 +3,12 @@
 # -> MISC ???
 # 
 
+# TODO: clean code, put in methods
+# TODO: include Adjective Map
+
+# TODO: improve logging
+
+
 #This class is the core of the question answering system.
 class QAScript
   require 'wordnet'
@@ -96,7 +102,7 @@ class QAScript
               nnp_indices << i
             end
           end
-          @debug_log << "Proper nouns #{nnps.to_s} found"
+          @debug_log << "found proper nouns #{nnps.to_s}"
           
           case nnp_indices.length
           when 2
@@ -108,23 +114,25 @@ class QAScript
                 @country = c
               end 
             end
+          when 0 || 1
+            return error_result "No country found in the given question."
           end
         end
         
-        # if related to country -> that is the subject country
+        # refer to last country if it was set
+        @country = lastCountry if lastCountry
         
-        # activate referring to last country here if wanted
-        #@country = lastCountry if lastCountry
-      when 1
-        # check if location is country
+      when 1 # if 1 location found 
+        # check if that location is country
         if Country.find_by_name(locations[0])
-          @debug_log << "found country #{locations[0]}"
+          @debug_log << "found country #{locations[0][0]}"
           @country = locations[0][0]
         else
           @debug_log << "only location is no country"
           return error_result "Could not determine the referred country"   
-        end 
-      when 2..10
+        end
+         
+      when 2..10 # if more than 1 location was found
         @debug_log << "more than one location tag, try aggregation"
         
         first = locations.first[1]
@@ -186,7 +194,6 @@ class QAScript
         possible_relations += wordnet_hypernyms(@lemmas[i], WordNet::Verb)
       end
     end
-    @debug_log << "Found verb hypernyms: #{possible_relations}"
     
     # debug print findings
     @debug_log << "nouns:      #{nouns}"
@@ -321,22 +328,13 @@ class QAScript
                 answers << $1
               end
               @answer =  answers.join ', '
-            when 'dbpedia-owl:populationDensity'
-         
+            when 'dbpedia-owl:populationDensity' # round population density and add unit
               f = result[0][:o].to_f
               @answer = "#{f.round(1)} inhabitants/km²"
-            when 'dbpedia-owl:language'
-              # TODO
-              @answer =~ (/[.]*\/([^\/]*)\z/)
-              @answer =  $1
-              if @answer.end_with? '_language'
-                @answer = @answer[0..@answer.length-10]
-              end
-            end
-
           end
 
-          @answer.gsub!("_", ' ')            
+          @answer.gsub!("_", ' ')
+        end            
       
       # when asked for country
       when @object && @object.length > 0 && @relation && @relation.length > 0
@@ -347,7 +345,7 @@ class QAScript
             
     
     # return hash with debug and solution info
-    return {:debug => @debug_log, :country => @country, :answer => @answer }
+    return {:debug => @debug_log, :country => @country, :answer => @answer, :relation => @relation}
   end # find_answer_method
   
   
@@ -378,7 +376,7 @@ class QAScript
   private
   
   def error_result message
-    { :debug => @debug_log, :error => message, :answer => false}
+    { :debug => @debug_log, :error => message, :answer => false, :country => @country, :relation => @relation}
   end
   
   ## Several methods follow to use the nlp parser

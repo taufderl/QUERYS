@@ -7,6 +7,7 @@ Qas::Application.routes.draw do
   # resources :questions
   get 'questions' => 'questions#index'
   delete 'questions/:id' => 'questions#destroy'
+  get 'questions/export' => 'questions#export'
   
   get "countries" => 'countries#index'
   

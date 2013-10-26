@@ -27,6 +27,7 @@ class WelcomeController < ApplicationController
     # if question asked
     elsif params[:question]
       @question = params[:question]
+      @remember_country = params[:remember_country]
       q = Question.new
       q.question = @question
 
@@ -45,9 +46,14 @@ class WelcomeController < ApplicationController
         flash.now[:alert] = result[:error]
       end
       
-      # save country to session
-      if result[:country]
-        session[:country] = result[:country]
+      if @remember_country
+        # save country to session
+        if result[:country]
+          session[:country] = result[:country]
+        end
+        params[:remember_country] = true
+      else
+        session[:country] = nil
       end
 
       # and debug information if asked for
@@ -59,6 +65,8 @@ class WelcomeController < ApplicationController
 
       # save question with answer to db
       q.answer = @answer
+      q.country = result[:country]
+      q.relation = result[:relation]
       q.save
       @question = q
 
