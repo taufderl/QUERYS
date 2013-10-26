@@ -1,5 +1,4 @@
 class WelcomeController < ApplicationController
-  require_relative '../qas-core/QAScript.rb'
   
   # if index page
   def index
@@ -34,8 +33,9 @@ class WelcomeController < ApplicationController
       ##>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>SCRIPT BEGIN
 
       # run qascript
+      require_relative '../qas-core/QAScript.rb'
       qascript = QAScript.new
-      result = qascript.find_answer(@question)
+      result = qascript.find_answer(@question, session[:country])
 
 
       # retrieve answer
@@ -43,6 +43,11 @@ class WelcomeController < ApplicationController
         @answer = result[:answer]
       elsif result[:error]
         flash.now[:alert] = result[:error]
+      end
+      
+      # save country to session
+      if result[:country]
+        session[:country] = result[:country]
       end
 
       # and debug information if asked for

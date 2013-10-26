@@ -1,3 +1,7 @@
+# TODO: be able to handle adjectives --> German capital -> Germany
+# -> following proper nouns ?
+# -> MISC ???
+# 
 
 #This class is the core of the question answering system.
 class QAScript
@@ -13,7 +17,8 @@ class QAScript
 
 
   # The method find_answer runs the core algorithm that uses the stanford nlp 
-  def find_answer(q)
+  def find_answer(q, lastCountry)
+     
  
     @debug_log = []
     @question = q
@@ -23,6 +28,11 @@ class QAScript
     @lemmas = []
     @pos = []
     @ners = []
+    
+    ## check if question
+    if @question.last != '?'
+      return error_result "Please ask a question."
+    end
     
     ########## 0. Use Stanford NLP <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     
@@ -43,39 +53,102 @@ class QAScript
     # find locations in question
     @ners.each.with_index { |elem, i|
       if elem == 'LOCATION'
-           locations << @words[i]
+           locations << [@words[i], i]
       end
     }
     
     # check how many possible locations were found
     case locations.length
       when 0 # if did not find any country name
-        @debug_log << "TODO: no country found"
+        @debug_log << "no certain country found"
         # TODO: find MISC in NERS and get wordnet pertaynim
+        miscs = []
+    
+        # find miscs in question
+        @ners.each.with_index { |elem, i|
+          if elem == 'MISC'
+               miscs << [@words[i], i]
+          end
+        }
+        @debug_log << "found miscs: #{miscs.to_s}"
+        
+        case miscs.length
+        when 1
+          word = misc[0][0] # look this word in wordnet (not possible for now)
+        when 2..10
+          first = miscs.first[1]
+          last = miscs.last[1]
+        
+          aggregated_misc = @words[first..last].join('_')
+          
+          if Country.find_by_name(aggregated_misc)
+            @country = aggregated_misc
+          end
+        when 0
+          # check for proper nouns
+          # if two or more follwing proper nouns, join with _ and look up in countries
+          nnps = []
+          nnp_indices = []
+          
+          @pos.each_with_index do |pos, i|
+            if pos == 'NNP' || pos == 'NNPS'
+              nnps << @words[i]
+              nnp_indices << i
+            end
+          end
+          @debug_log << "Proper nouns #{nnps.to_s} found"
+          
+          case nnp_indices.length
+          when 2
+            if nnp_indices[1] - nnp_indices[0] == 1
+              # combine them
+              c = nnps.join('_')
+              @debug_log << "Check for Country #{c} if exists"
+              if Country.find_by_name(c)
+                @country = c
+              end 
+            end
+          end
+        end
+        
         # if related to country -> that is the subject country
-        # if two or more follwing proper nouns, join with _ and look up in countries
+        
+        # activate referring to last country here if wanted
+        #@country = lastCountry if lastCountry
       when 1
         # check if location is country
         if Country.find_by_name(locations[0])
           @debug_log << "found country #{locations[0]}"
-          @country = locations[0]
+          @country = locations[0][0]
         else
           @debug_log << "only location is no country"
-          #TODO: do the same like there was no country found   
+          return error_result "Could not determine the referred country"   
         end 
       when 2..10
-        @debug_log << "more than one location found"
-        n = 0
-        indices = []
-        locations.each.with_index do |l, i|
-          if Country.find_by_name(l)
-            n+=1
-            indices << i
+        @debug_log << "more than one location tag, try aggregation"
+        
+        first = locations.first[1]
+        last = locations.last[1]
+        
+        aggregated_country = @words[first..last].join('_')
+        
+        @debug_log << "aggregated country: #{aggregated_country}"
+        
+        if Country.find_by_name(aggregated_country)
+          @country = aggregated_country
+        else
+          n = 0
+          indices = []
+          locations.each do |l, i|
+            if Country.find_by_name(l)
+              n+=1
+              indices << i
+            end
           end
-        end
-        case n
+          
+          case n
           when 0
-            @debug_log << "no country found"
+            @debug_log << "this should not happen!!"  
           when 1
             @country = locations[indices[0]]
             @debug_log << "one country found: #{@country}"
@@ -83,6 +156,7 @@ class QAScript
             @debug_log << "more than one country found...abort"
             return error_result "Didn't understand the question, because more than one country was mentioned"
         end
+      end
     end 
     
     ## @country is defined from here
@@ -96,7 +170,7 @@ class QAScript
     possible_relations = []
     
     # search for word types
-    @pos.each.with_index { |elem, i|
+    @pos.each.with_index do |elem, i|
       if (elem == 'NN' || elem == 'NNS')
         nouns << [@lemmas[i], i]
         # get hypernyms
@@ -104,13 +178,15 @@ class QAScript
         
       elsif (elem.include? 'JJ') && (@ners[i] != 'Misc')     ##check for capitalization
         adjectives << [@lemmas[i], i]
-        # TODO: handle adjectives
+        # TODO: handle adjectives (Wordnet issue)
         
       elsif elem.include? 'VB'
         verbs << [@lemmas[i], i]
-        # TODO: handle verbs
+        # handle verbs
+        possible_relations += wordnet_hypernyms(@lemmas[i], WordNet::Verb)
       end
-    }
+    end
+    @debug_log << "Found verb hypernyms: #{possible_relations}"
     
     # debug print findings
     @debug_log << "nouns:      #{nouns}"
@@ -127,7 +203,35 @@ class QAScript
       when 1
         @relation = WordNetMap.map[possible_relations[0]]
       when 2..10
-        # TODO: decide for certain relation or ??
+        @debug_log << possible_relations.inspect
+        
+        # if all relations target the same predicated 
+        targets = Set.new
+        possible_relations.each do |r|
+          targets.add WordNetMap.map[r]
+        end
+        if targets.size == 1
+          @relation = targets.to_a[0]
+      
+        else
+          if possible_relations.include? 'people'
+            possible_relations.delete 'people'
+          end
+          if possible_relations.include? 'name'
+            possible_relations.delete 'name'
+          end
+          if possible_relations.length == 1
+            @relation = WordNetMap.map[possible_relations[0]]
+          end
+        end
+            
+
+
+        # if poeple and density: take density
+        #elsif (possible_relations.length == 2) && (possible_relations.include? 'people') && (possible_relations.include? 'density')
+        #  @relation = WordNetMap.map['density']
+        #end
+        
     end
     
     @debug_log << ">>>>>>>>>> relation: #{@relation}"
@@ -152,51 +256,98 @@ class QAScript
             @debug_log << "TODO: no results found"
             return error_result "Sorry, there seems to be no information about that in DBpedia"
           when 1
-            #TODO: extract answer if not a name
             @answer = result[0][:o].to_s
-          when 2..10
-            @debug_log << "TODO: too many results found"
-            # TODO: find right one
-        end
-        
+            
+            case @relation
+            when 'dbpedia-owl:anthem'
+              @answer =~ (/[.]*\/([^\/]*)\z/)
+              @answer = $1
+            when 'dbpedia-owl:capital'
+              @answer =~ (/[.]*\/([^\/]*)\z/)
+              @answer = $1
+            when 'dbpprop:areaKm'
+              @answer += ' km²'
+            when 'dbpedia-owl:currency'
+              @answer =~ (/[.]*\/([^\/]*)\z/)
+              @answer = $1
+              if @answer.end_with? '_sign'
+                @answer = @answer[0..@answer.length-6]
+              end
+            when 'dbpedia-owl:governmentType'
+              @answer =~ (/[.]*\/([^\/]*)\z/)
+              @answer = $1
+            when 'dbpedia-owl:longName'
+              @answer
+            when 'dbpedia-owl:motto'
+              @answer
+            when 'dbpedia-owl:populationDensity'
+              @answer
+            when 'dbpprop:populationEstimate'
+              @answer
+            when 'dbpprop:largestCity'
+              if @answer == 'capital'
+                # do another query for the capital...
+                inner_query = Sparql.object_query(@country, 'dbpedia-owl:capital')
+                result = sparql.query(inner_query)
+                @answer = result[0][:o].to_s
+                @answer =~ (/[.]*\/([^\/]*)\z/)
+                @answer =  $1
+                
+              else
+                @answer =~ (/[.]*\/([^\/]*)\z/)
+                @answer =  $1
+              end
+            when 'dbpedia-owl:language'
+              @answer =~ (/[.]*\/([^\/]*)\z/)
+              @answer =  $1
+              if @answer.end_with? '_language'
+                @answer = @answer[0..@answer.length-10]
+              end
+            end
+
+            # replace _ with whitespace
+            @answer.gsub!("_", ' ')
+  
+          when 2..10 # when more than one sparql result 
+            @debug_log << "more than one sparql result found"
+            @debug_log << result.inspect
+            
+            # find right one
+            case @relation
+            when 'dbpedia-owl:governmentType' # government type put all
+              answers = []
+              result.each do |r| 
+                r[:o].to_s =~ (/[.]*\/([^\/]*)\z/)
+                answers << $1
+              end
+              @answer =  answers.join ', '
+            when 'dbpedia-owl:populationDensity'
+         
+              f = result[0][:o].to_f
+              @answer = "#{f.round(1)} inhabitants/km²"
+            when 'dbpedia-owl:language'
+              # TODO
+              @answer =~ (/[.]*\/([^\/]*)\z/)
+              @answer =  $1
+              if @answer.end_with? '_language'
+                @answer = @answer[0..@answer.length-10]
+              end
+            end
+
+          end
+
+          @answer.gsub!("_", ' ')            
+      
       # when asked for country
       when @object && @object.length > 0 && @relation && @relation.length > 0
         @query = Sparql.subject_query(@relation, @object)
     end
     
-    ########## 5. format answer output dependent on incoming format
-    case @relation
-      when 'dbpedia-owl:anthem'
-        @answer =~ (/[.]*\/([A-Za-z]*)\z/)
-        @answer =  $1
-      when 'dbpedia-owl:capital'
-        @answer =~ (/[.]*\/([A-Za-z]*)\z/)
-        @answer =  $1
-      when 'dbpedia-owl:areaTotal'
-        @answer
-      when 'dbpedia-owl:currency'
-        @answer =~ (/[.]*\/([A-Za-z]*)\z/)
-        @answer =  $1
-      when 'dbpedia-owl:governmentType'
-        @answer
-      when 'dbpedia-owl:longName'
-        @answer
-      when 'dbpedia-owl:motto'
-        @answer
-      when 'dbpedia-owl:populationDensity'
-        @answer
-      when 'dbpprop:populationEstimate'
-        @answer
-      when 'dbpprop:largestCity'
-        @answer
-      when 'dbpedia-owl:language'
-        @answer =~ (/[.]*\/([A-Za-z]*)\z/)
-        @answer =  $1
-    end
+    @debug_log << "The answer output is set to #{@answer}" 
             
     
     # return hash with debug and solution info
-    return {:debug => @debug_log, :answer => @answer }
+    return {:debug => @debug_log, :country => @country, :answer => @answer }
   end # find_answer_method
   
   
@@ -295,7 +446,7 @@ class QAScript
   end
   
   def use_inherited_nlp
-    #@@pipeline = StanfordCoreNLP.load(:tokenize, :ssplit, :pos, :lemma, :ner) ##TODO MOVE AWAY HERE
+    #@@pipeline = StanfordCoreNLP.load(:tokenize, :ssplit, :pos, :lemma, :ner) ## Needs to be set in config if this method is used
     annotated_question = StanfordCoreNLP::Annotation.new(@question)
     #@@pipeline.annotate(annotated_question)
     Rails.application.config.pipeline.annotate(annotated_question)

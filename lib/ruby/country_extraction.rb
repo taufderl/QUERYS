@@ -7,7 +7,7 @@
  
 
 countries = []
-f = File.open('./country_tags').read
+f = File.open('./myCountry.txt').read
 f.gsub!(/\r\n?/, "\n")
 
 
