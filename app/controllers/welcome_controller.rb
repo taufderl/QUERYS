@@ -3,7 +3,8 @@ class WelcomeController < ApplicationController
   # if index page
   def index
     # set to debug mode
-    @DEBUG_MODE = true
+    @DEBUG_MODE = false
+    @DEBUG_MODE = true if ENV['DEBUG_MODE']
 
     # if judge answer
     if params[:judge_answer]

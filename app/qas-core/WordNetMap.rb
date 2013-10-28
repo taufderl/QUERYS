@@ -27,28 +27,27 @@ class WordNetMap
     
     'city' => 'dbpprop:largestCity',              # works
         
-    'language' => 'dbpedia-owl:language',         # language TODO: remove '_language'
-     
-    # consider that date sometimes not exists
-    #['termination', 'ending', 'conclusion'] => 'dbpedia-owl:dissolutionDate',
-    #['termination', 'ending', 'conclusion'] => 'dbpedia-owl:dissolutionYear',
-    #['beginning', 'start', 'commencement'] => 'dbpedia-owl:foundingDate',
-    #['beginning', 'start', 'commencement'] => 'dbpedia-owl:foundingYear,
+    'language' => 'dbpedia-owl:language',         # language 
+      
+    'termination' => 'dbpedia-owl:dissolutionDate', # otherwise check dbpedia-owl:dissolutionYear
+    'defeat' =>  'dbpedia-owl:dissolutionDate',
     
-    #'dbpedia-owl:leaderName'    Control, command/leader + Who or name
-    #'dbpedia-owl:leaderTitle'   Control, command/leader + How/what
-
+    'beginning' => 'dbpedia-owl:foundingDate', # otherwise check dbpedia-owl:foundingYear
+   
+    'person' => 'dbpedia-owl:leaderTitle',
+    
     ## VERBS
 
     'pay' => 'dbpedia-owl:currency', 
     
     'communicate' => 'dbpedia-owl:language',
     
-    #['initiate', 'create' ] => 'dbpedia-owl:foundingDate',
-    # 'defeat' => 'dbpedia-owl:dissolutionDate',
+    'initiate' => 'dbpedia-owl:foundingDate',
+    'create' => 'dbpedia-owl:foundingDate',
     
-    # 'command' => 'dbpedia-owl:leaderName'    
-    # 'command' => 'dbpedia-owl:leaderTitle' 
+    'command' => 'dbpedia-owl:leaderTitle',
+    'direct' => 'dbpedia-owl:leaderTitle',
+     
   }
   end
   

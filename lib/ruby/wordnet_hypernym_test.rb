@@ -1,14 +1,15 @@
-require 'wordnet'
-require 'set'
-
 class WordnetTest
- # find pertainym from wordnet and check if country
-   # find hypernyms from wordnet
+  
+  require 'wordnet'
+  require 'set'
+   
+  def initialize
+    @wordnet = WordNet::Lexicon.new  
+  end
   
    
-  def wordnet_hypernym(word, part_of_speech)
-    @wordnet = WordNet::Lexicon.new
-    
+  # find hypernyms from wordnet
+  def wordnet_hypernyms(word, part_of_speech)
       # look in wordnet
       synsets = @wordnet.lookup_synsets(word, part_of_speech) 
       
@@ -25,9 +26,33 @@ class WordnetTest
       
       #check these with the mappings
       return hypernyms.to_a
-  end # end wordnet_hypernyms method 
+    
+  end # end wordnet_hypernyms method
+  
+    # find hypernyms from wordnet
+  def wordnet_recursive_hypernyms(word, part_of_speech)
+      # look in wordnet
+      synsets = @wordnet.lookup_synsets(word, part_of_speech) 
+      
+      hypernyms = Set.new
+      
+      synsets.each  { |ss|
+         ss.traverse(:hypernyms).each { |synset|
+           synset.words.each { |word|
+             hypernyms << word.lemma
+           }
+         }
+       }
+      
+      #check these with the mappings
+      return hypernyms.to_a
+    
+  end # end wordnet_hypernyms method
+  
 end
 
 w = WordnetTest.new
+require 'wordnet'
 
-puts w.wordnet_hypernym('pay', WordNet::Verb)
+
+puts w.wordnet_recursive_hypernyms('president', WordNet::Noun)

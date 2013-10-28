@@ -1,13 +1,6 @@
-# TODO: be able to handle adjectives --> German capital -> Germany
-# -> following proper nouns ?
-# -> MISC ???
-# 
+# TODO: clean code, put in methods and modules
 
-# TODO: clean code, put in methods
-# TODO: include Adjective Map
-
-# TODO: improve logging
-
+# TODO: look nicer
 
 #This class is the core of the question answering system.
 class QAScript
@@ -31,7 +24,8 @@ class QAScript
     @question = q
     @wordnet = WordNet::Lexicon.new  
     
-    @country = nil  
+    @country = nil
+    @relation = nil
     
     @words = []
     @lemmas = []
@@ -223,7 +217,6 @@ class QAScript
     case possible_relations.length
       when 0
         @debug_log << "didn't find possible relation"
-        return error_result "Could not determine the aimed relation of the question"
       when 1
         @relation = WordNetMap.map[possible_relations[0]]
       when 2..10
@@ -247,18 +240,39 @@ class QAScript
           if possible_relations.length == 1
             @relation = WordNetMap.map[possible_relations[0]]
           end
-        end
-            
+        end        
+    end
 
-
-        # if poeple and density: take density
-        #elsif (possible_relations.length == 2) && (possible_relations.include? 'people') && (possible_relations.include? 'density')
-        #  @relation = WordNetMap.map['density']
-        #end
+    
+    if @relation.nil?
+      @debug_log << "do deep search for nouns"
+      
+      nouns.each do |noun|
+        possible_relations += wordnet_recursive_hypernyms(noun, WordNet::Noun)
         
+        if possible_relations.any?
+          break
+        end
+      end
+      
+      case possible_relations.length
+      when 0
+        @debug_log << "nothing found in deep search..."
+      when 1
+        @relation = possible_relation[0]
+      when 2..10
+        @debug_log << "possible_relations: #{possible_relations}"
+      end
+    
     end
     
     @debug_log << ">>>>>>>>>> relation: #{@relation}"
+    
+    if @relation.nil?
+      return error_result "Could not determine the aimed relation of the question"
+    end
+    
+    
     
     ########## 4. Sparqle Query <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     
@@ -269,98 +283,142 @@ class QAScript
     @query = ''
     @answer = ''
     case
-      # when asked for property
-      when @country && @country.length > 0 && @relation && @relation.length > 0
-        @query = Sparql.object_query(@country, @relation)
-        
-        result = sparql.query(@query)
-        
-        case result.length
-          when 0
-            @debug_log << "TODO: no results found"
-            return error_result "Sorry, there seems to be no information about that in DBpedia"
-          when 1
-            @answer = result[0][:o].to_s
-            
-            case @relation
-            when 'dbpedia-owl:anthem'
-              @answer =~ (/[.]*\/([^\/]*)\z/)
-              @answer = $1
-            when 'dbpedia-owl:capital'
-              @answer =~ (/[.]*\/([^\/]*)\z/)
-              @answer = $1
-            when 'dbpprop:areaKm'
-              @answer += ' km²'
-            when 'dbpedia-owl:currency'
-              @answer =~ (/[.]*\/([^\/]*)\z/)
-              @answer = $1
-              if @answer.end_with? '_sign'
-                @answer = @answer[0..@answer.length-6]
-              end
-            when 'dbpedia-owl:governmentType'
-              @answer =~ (/[.]*\/([^\/]*)\z/)
-              @answer = $1
-            when 'dbpedia-owl:longName'
-              @answer
-            when 'dbpedia-owl:motto'
-              @answer
-            when 'dbpedia-owl:populationDensity'
-              @answer
-            when 'dbpprop:populationEstimate'
-              @answer
-            when 'dbpprop:largestCity'
-              if @answer == 'capital'
-                # do another query for the capital...
-                inner_query = Sparql.object_query(@country, 'dbpedia-owl:capital')
-                result = sparql.query(inner_query)
-                @answer = result[0][:o].to_s
-                @answer =~ (/[.]*\/([^\/]*)\z/)
-                @answer =  $1
-                
-              else
-                @answer =~ (/[.]*\/([^\/]*)\z/)
-                @answer =  $1
-              end
-            when 'dbpedia-owl:language'
-              @answer =~ (/[.]*\/([^\/]*)\z/)
-              @answer =  $1
-              if @answer.end_with? '_language'
-                @answer = @answer[0..@answer.length-10]
-              end
-            end
-
-            # replace _ with whitespace
-            @answer.gsub!("_", ' ')
-  
-          when 2..10 # when more than one sparql result 
-            @debug_log << "more than one sparql result found"
-            @debug_log << result.inspect
-            
-            # find right one
-            case @relation
-            when 'dbpedia-owl:governmentType' # government type put all
-              answers = []
-              result.each do |r| 
-                r[:o].to_s =~ (/[.]*\/([^\/]*)\z/)
-                answers << $1
-              end
-              @answer =  answers.join ', '
-            when 'dbpedia-owl:populationDensity' # round population density and add unit
-              f = result[0][:o].to_f
-              @answer = "#{f.round(1)} inhabitants/km²"
-          end
-
-          @answer.gsub!("_", ' ')
-        end            
+    # when asked for property
+    when @country && @country.length > 0 && @relation && @relation.length > 0
+      @query = Sparql.object_query(@country, @relation)
       
+      result = sparql.query(@query)
+      
+      case result.length
+      when 0
+        @debug_log << "TODO: no results found"
+        case @relation
+        when 'dbpedia-owl:dissolutionDate'
+          inner_query = Sparql.object_query(@country, 'dbpedia-owl:dissolutionYear')
+            result = sparql.query(inner_query)
+            @answer = result[0][:o].to_s[0..3]
+        when 'dbpedia-owl:foundingDate'
+          inner_query = Sparql.object_query(@country, 'dbpedia-owl:foundingYear')
+            result = sparql.query(inner_query)
+            @answer = result[0][:o].to_s[0..3]
+        else
+          return error_result "Sorry, there seems to be no information about that in DBpedia"
+        end
+        
+      when 1
+        @answer = result[0][:o].to_s
+        
+        case @relation
+        when 'dbpedia-owl:anthem'
+          @answer =~ (/[.]*\/([^\/]*)\z/)
+          @answer = $1
+        when 'dbpedia-owl:capital'
+          @answer =~ (/[.]*\/([^\/]*)\z/)
+          @answer = $1
+        when 'dbpprop:areaKm'
+          @answer += ' km²'
+        when 'dbpedia-owl:currency'
+          @answer =~ (/[.]*\/([^\/]*)\z/)
+          @answer = $1
+          if @answer.end_with? '_sign'
+            @answer = @answer[0..@answer.length-6]
+          end
+        when 'dbpedia-owl:governmentType'
+          @answer =~ (/[.]*\/([^\/]*)\z/)
+          @answer = $1
+        when 'dbpedia-owl:longName'
+          @answer
+        when 'dbpedia-owl:motto'
+          @answer
+        when 'dbpedia-owl:populationDensity'
+          @answer
+        when 'dbpprop:populationEstimate'
+          @answer
+        when 'dbpprop:largestCity'
+          if @answer == 'capital'
+            # do another query for the capital...
+            inner_query = Sparql.object_query(@country, 'dbpedia-owl:capital')
+            result = sparql.query(inner_query)
+            @answer = result[0][:o].to_s
+            @answer =~ (/[.]*\/([^\/]*)\z/)
+            @answer =  $1
+            
+          else
+            @answer =~ (/[.]*\/([^\/]*)\z/)
+            @answer =  $1
+          end
+        when 'dbpedia-owl:language'
+          @answer =~ (/[.]*\/([^\/]*)\z/)
+          @answer =  $1
+          if @answer.end_with? '_language'
+            @answer = @answer[0..@answer.length-10]
+          end
+        when 'dbpedia-owl:leaderTitle'
+          inner_query = Sparql.object_query(@country, 'dbpedia-owl:leaderName')
+          result = sparql.query(inner_query)
+          @answer += "is #{result[0][:o].to_s}"
+        end
+
+        # replace _ with whitespace
+        @answer.gsub!("_", ' ')
+
+      when 2..10 # when more than one sparql result 
+        @debug_log << "more than one sparql result found"
+        
+        answers = []
+        # find right one
+        case @relation
+        when 'dbpedia-owl:governmentType', 'dbpedia-owl:capital' # government type put all
+          result.each do |r| 
+            r[:o].to_s =~ (/[.]*\/([^\/]*)\z/)
+            answers << $1
+          end
+          @answer =  answers.join ', '
+          
+        when 'dbpedia-owl:populationDensity' # round population density and add unit
+          f = result[0][:o].to_f
+          @answer = "#{f.round(1)} inhabitants/km²"
+          
+        when 'dbpedia-owl:currency'
+          result.each do |r| 
+            r[:o].to_s =~ (/[.]*\/([^\/]*)\z/)
+            answers << $1
+          end
+          @answer = answers.join(', ')
+        when 'dbpedia-owl:language'
+          result.each do |r| 
+            r[:o].to_s =~ (/[.]*\/([^\/]*)\z/)
+            answers << $1
+          end
+          @answer = answers.join(', ')
+        when 'dbpedia-owl:dissolutionDate',  'dbpedia-owl:foundingDate'
+          result.each do |date_r|
+            answers << date_r[:o].to_s
+          end
+          @answer = answers.join(', ')
+        when 'dbpedia-owl:leaderTitle'
+          result.each do |date_r|
+            answers << date_r[:o].to_s
+          end
+          inner_query = Sparql.object_query(@country, 'dbpedia-owl:leaderName')
+          result = sparql.query(inner_query)
+          result.each do |date_r|
+            date_r[:o].to_s =~ (/[.]*\/([^\/]*)\z/)
+            answers << $1
+          end
+          @answer = answers.join(', ')
+        
+        end
+        @answer.gsub!("_", ' ')
+      end            
+    
       # when asked for country
-      when @object && @object.length > 0 && @relation && @relation.length > 0
-        @query = Sparql.subject_query(@relation, @object)
+    when @object && @object.length > 0 && @relation && @relation.length > 0
+      @query = Sparql.subject_query(@relation, @object)
     end
     
     @debug_log << "The answer output is set to #{@answer}" 
-            
-    
+             
     # return hash with debug and solution info
     return {:debug => @debug_log, :country => @country, :answer => @answer, :relation => @relation}
   end # find_answer_method
@@ -384,6 +442,29 @@ class QAScript
           }
         }
       }
+      
+      #check these with the mappings
+      return hypernyms.to_a & WordNetMap.map.keys.to_a
+    end
+  end # end wordnet_hypernyms method
+  
+    # find hypernyms from wordnet
+  def wordnet_recursive_hypernyms(word, part_of_speech)
+    if WordNetMap.map.keys.include? word
+      return [word]
+    else
+      # look in wordnet
+      synsets = @wordnet.lookup_synsets(word, part_of_speech) 
+      
+      hypernyms = Set.new
+      
+      synsets.each  { |ss|
+         ss.traverse(:hypernyms).each { |synset|
+           synset.words.each { |w|
+             hypernyms << w.lemma
+           }
+         }
+       }
       
       #check these with the mappings
       return hypernyms.to_a & WordNetMap.map.keys.to_a

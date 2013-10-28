@@ -48,30 +48,57 @@
     </div>
 
     <div class="container-fluid">
-      
+      <div class="row-fluid">
+      	<div class="span8 offset2">
+      		<%= bootstrap_flash %>
+      	</div>
+        <div class="span11">
+          	<%= yield %>
+        </div>
+      </div>
       <% if current_page? root_url %>
       	<div class="row-fluid">
           <div class="offset2 span8 well">
-          	This Question Answering System processes questions given in natural langauge referring to the subject Countries. It uses the parser ??? to extract the essencial content of the question, maps it to the propritate DBpedia relations and retrieves the answer from DBpedia using SPARQL. 
-          	It has been designed by two students at the University of Groningen as final project of the course 'Semantic Web Technology' 
+          	<p> 
+          		<b>QUERYS</b> is an automatic Question/Answering System that processes questions given in natural 
+				langauge and referring to countries. It processes the questions using the <em>Stanford CoreNLP</em> 
+				to derive the target country and relation, and compile a <em>SPARQLE</em> query to access info 
+				stored in <em>DBpedia</em>.
+			</p> 
+			<p>
+				In detail, <b>QUERYS</b> uses <em>WordNet</em> to map content words found in the question to the covered 
+				relationships, exploiting is-a relationships (semantic similarity). The system covers 15
+				relationships among those that exist for countries in DBpedia, thus it can provide answers 
+				about <span class="text-info">official names, mottos, anthems, area, capitals, currencies, year of foundation and 
+				dissolution, form of government, language, largest city, leaders' names and offices, and 
+				population estimates</span>. Everything that don't concern these aspects is out of <b>QUERYS'</b> scope.
+				After asking a question, you can provide us with a very useful feed-back by telling us if 
+				the answer that <b>QUERYS</b> gave you was correct or not.
+			</p>
+			<p>
+				If you want to ask more questions about the same country you can select the option Remember
+				Country, that allows you to omit the name of the country in the following questions.
+			</p>
+    
           </div>
         </div>
       <% end %>
       
-      <div class="row-fluid">
-        <div class="offset2 span8">
-          <%= bootstrap_flash %>
-        </div>
-      </div>
-      <div class="row-fluid">
-        <div class="span12">
-          <%= yield %>
-        </div>
-      </div>
-      <!--/row-->
-
+    </div> 
+    
+    <div class="navbar-fixed-bottom">
       
-    </div> <!-- /container -->
+        <footer class="span10 offset1">
+    	<p class="text-center">
+			<b>QUERYS</b> has been implemented by Tim auf der Landwehr and Giovanni Cassani at the University of 
+			Groningen for the course 'Semantic Web Technology'.
+			<br />
+			For any further information, mail to: 	g.cassani at student dot rug dot nl
+										t.auf.der.landwehr at student dot rug dot nl
+		</p> 
+		</footer>
+   	
+   	</div>
 
   </body>
 </html>
