@@ -20,6 +20,7 @@ class QAScript
   require 'json'
   require_relative 'WordNetMap'
   require_relative 'Sparql'
+  require_relative 'Adjective'
 
 
   # The method find_answer runs the core algorithm that uses the stanford nlp 
@@ -28,12 +29,20 @@ class QAScript
  
     @debug_log = []
     @question = q
-    @wordnet = WordNet::Lexicon.new    
+    @wordnet = WordNet::Lexicon.new  
+    
+    @country = nil  
     
     @words = []
     @lemmas = []
     @pos = []
     @ners = []
+    
+    nouns = []
+    adjectives = []
+    verbs = []
+    possible_relations = []
+    
     
     ## check if question
     if @question.last != '?'
@@ -67,7 +76,7 @@ class QAScript
     case locations.length
       when 0 # if did not find any country name
         @debug_log << "no certain country found"
-        # TODO: find MISC in NERS and get wordnet pertaynim
+        # find MISC in NERS and get wordnet pertaynim
         miscs = []
     
         # find miscs in question
@@ -80,7 +89,11 @@ class QAScript
         
         case miscs.length
         when 1
-          word = misc[0][0] # look this word in wordnet (not possible for now)
+          word = miscs[0][0] # look this word in wordnet (not possible for now)
+          if Adjective.map.keys.include? word
+            @country = Adjective.map[word]
+          end
+          
         when 2..10
           first = miscs.first[1]
           last = miscs.last[1]
@@ -115,7 +128,20 @@ class QAScript
               end 
             end
           when 0 || 1
-            return error_result "No country found in the given question."
+            # try to find Country in adjectives
+            @pos.each_with_index do |elem, i|
+              if elem.include? 'JJ'
+                 adjectives << [@lemmas[i], i]
+              end
+            end
+            adjectives.each do |adj, i|
+              if Adjective.map.keys.include? adj
+                @country = Adjective.map[adj]
+              end
+            end
+            if @country.nil?
+              return error_result "No country found in the given question."
+            end
           end
         end
         
@@ -172,22 +198,13 @@ class QAScript
     
     ########## 2. FIND RELATION <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
      
-    nouns = []
-    adjectives = []
-    verbs = []
-    possible_relations = []
     
     # search for word types
     @pos.each.with_index do |elem, i|
       if (elem == 'NN' || elem == 'NNS')
         nouns << [@lemmas[i], i]
         # get hypernyms
-        possible_relations += wordnet_hypernyms(@lemmas[i], WordNet::Noun)
-        
-      elsif (elem.include? 'JJ') && (@ners[i] != 'Misc')     ##check for capitalization
-        adjectives << [@lemmas[i], i]
-        # TODO: handle adjectives (Wordnet issue)
-        
+        possible_relations += wordnet_hypernyms(@lemmas[i], WordNet::Noun)     
       elsif elem.include? 'VB'
         verbs << [@lemmas[i], i]
         # handle verbs
