@@ -1,16 +1,16 @@
-class WordNetMap
+class Relations
 
   # Maps wordnet entries to the apropriate dbpedia ressorce
   def self.map  
   { 
-    'song' => 'dbpedia-owl:anthem',               # works well
+    'song' => 'dbpedia-owl:anthem',               # works
     
-    'seat'=> 'dbpedia-owl:capital',               # works well
+    'seat'=> 'dbpedia-owl:capital',               # works
      
     'extent' => 'dbpprop:areaKm',                 # works
     'size' => 'dbpprop:areaKm',
 
-    'monetary system' => 'dbpedia-owl:currency',  # works remove '_sign'
+    'monetary system' => 'dbpedia-owl:currency',  # works
     'currency' => 'dbpedia-owl:currency', 
     
     'government' => 'dbpedia-owl:governmentType', # works
@@ -27,7 +27,7 @@ class WordNetMap
     
     'city' => 'dbpprop:largestCity',              # works
         
-    'language' => 'dbpedia-owl:language',         # language 
+    'language' => 'dbpedia-owl:language',         # works 
       
     'termination' => 'dbpedia-owl:dissolutionDate', # otherwise check dbpedia-owl:dissolutionYear
     'defeat' =>  'dbpedia-owl:dissolutionDate',

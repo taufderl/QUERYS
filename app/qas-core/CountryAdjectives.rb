@@ -1,4 +1,4 @@
-class Adjective
+class CountryAdjectives
   
   def self.map
     {

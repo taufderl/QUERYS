@@ -35,9 +35,9 @@ class WelcomeController < ApplicationController
       ##>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>SCRIPT BEGIN
 
       # run qascript
-      require_relative '../qas-core/QAScript.rb'
-      qascript = QAScript.new
-      result = qascript.find_answer(@question, session[:country])
+      require_relative '../qas-core/QUERYS.rb'
+      querys = QUERYS.new
+      result = querys.find_answer(@question, session[:country])
 
 
       # retrieve answer
