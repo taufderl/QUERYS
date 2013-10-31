@@ -1,6 +1,26 @@
-This Question Answering System processes questions given in natural language 
-referring to the subject Countries. 
-It uses the Stanford coreNLP to extract the essential content of the question,
- maps it to the appropriate DBpedia relations and retrieves the answer from DBpedia using SPARQL. 
- It has been designed by two students at the University of Groningen as final project of 
- the course 'Semantic Web Technology'
+QUERYS is an automatic Question/Answering System that processes questions 
+given in natural langauge and referring to countries. It processes the 
+questions using the Stanford CoreNLP to derive the target country and relation, 
+and compile a SPARQLE query to access info stored in DBpedia.
+
+In detail, QUERYS uses WordNet to map content words found in the question
+to the covered relationships, exploiting is-a relationships (semantic similarity).
+The system covers 15 relationships among those that exist for countries in
+DBpedia, thus it can provide answers about official names, mottos, anthems, 
+area, capitals, currencies, year of foundation and dissolution, form of 
+government, language, largest city, leaders' names and offices, and 
+population estimates. Everything that don't concern these aspects is 
+out of QUERYS' scope. After asking a question, you can provide us with a 
+very useful feed-back by telling us if the answer that QUERYS gave 
+you was correct or not.
+
+If you want to ask more questions about the same country you can select 
+the option Remember Country, that allows you to omit the name of the country in the following questions.
+
+
+# Contact
+QUERYS has been implemented by Tim auf der Landwehr and Giovanni Cassani 
+at the University of Groningen for the course 'Semantic Web Technology'. 
+For any further information, mail to: 
+g.cassani at student dot rug dot nl
+t.auf.der.landwehr at student dot rug dot nl
