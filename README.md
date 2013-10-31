@@ -1,3 +1,4 @@
+# About
 QUERYS is an automatic Question/Answering System that processes questions 
 given in natural langauge and referring to countries. It processes the 
 questions using the Stanford CoreNLP to derive the target country and relation, 
@@ -17,10 +18,12 @@ you was correct or not.
 If you want to ask more questions about the same country you can select 
 the option Remember Country, that allows you to omit the name of the country in the following questions.
 
-
 # Contact
 QUERYS has been implemented by Tim auf der Landwehr and Giovanni Cassani 
 at the University of Groningen for the course 'Semantic Web Technology'. 
 For any further information, mail to: 
 g.cassani at student dot rug dot nl
 t.auf.der.landwehr at student dot rug dot nl
+
+# Run it yourself
+The system is based on Ruby on Rails. The Gemfile contains all necessary gems to run it. 
