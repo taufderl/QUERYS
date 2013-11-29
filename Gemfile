@@ -55,7 +55,10 @@ gem 'figaro'
 #exception notifier
 gem 'exception_notification'
 
-gem 'fcgi'
+group :production do 
+  #gem 'fcgi'
+  gem 'passenger'
+end
 
 # to read RDF files and use SPARQL
 gem 'rdf'
