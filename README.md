@@ -27,3 +27,8 @@ t.auf.der.landwehr at student dot rug dot nl
 
 # Run it yourself
 The system is based on Ruby on Rails. The Gemfile contains all necessary gems to run it. 
+
+License
+-------
+
+QUERYS is licensed under the MIT license. See [LICENSE](LICENSE) for details.
